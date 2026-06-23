@@ -36,3 +36,7 @@ Deliberate technical choices made during development, with alternatives consider
 **Decision:** `value` column is JSONB, `valueType` enum tells the frontend how to render it.
 **Alternatives considered:** storing value as `text` and casting in application code.
 **Reason:** JSONB preserves native types in the database (boolean stays boolean, number stays number). Storing as text and casting later is indefensible — nothing prevents a boolean field storing an invalid value.
+
+### Prisma v6 over v7
+**Decision:** Downgraded from Prisma v7 to v6.
+**Reason:** Prisma v7 moved datasource configuration out of `schema.prisma` into a separate `prisma.config.ts` file — a breaking change that adds setup complexity. v6 supports the standard `schema.prisma` url configuration. Can be revisited with more time.
