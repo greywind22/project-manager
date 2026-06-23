@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { LocalStorageService } from './local-storage.service';
-import { STORAGE_SERVICE } from './interface';
+import { STORAGE_SERVICE } from './storage.interface';
 
 @Module({
   providers: [

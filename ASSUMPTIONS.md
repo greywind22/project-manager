@@ -13,3 +13,4 @@ Things assumed due to missing information. Each would be verified with the clien
 - Video assets are external URLs only (YouTube/Vimeo) — raw video upload is out of scope
 - Link thumbnails will be null for now — no rich preview
 - Custom fields are seeded, not user-created via the UI
+- Asset thumbnails are static fallback images served from `frontend/public/thumbnails/`. YouTube videos use the YouTube CDN thumbnail (no API key required). Vimeo and links use static icons.

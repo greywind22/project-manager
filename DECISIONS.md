@@ -40,3 +40,22 @@ Deliberate technical choices made during development, with alternatives consider
 ### Prisma v6 over v7
 **Decision:** Downgraded from Prisma v7 to v6.
 **Reason:** Prisma v7 moved datasource configuration out of `schema.prisma` into a separate `prisma.config.ts` file — a breaking change that adds setup complexity. v6 supports the standard `schema.prisma` url configuration. Can be revisited with more time.
+
+### Static thumbnails served from frontend/public
+**Decision:** Thumbnails are static fallback images in `frontend/public/thumbnails/` — one per asset type (link.png, document.png, image.png, youtube.png, vimeo.png). YouTube videos additionally use the YouTube CDN thumbnail which requires no API key.
+**Alternatives considered:** Generating real thumbnails on upload (pdf-thumbnail for docs, microlink.io og:image for links, Vimeo oEmbed API for Vimeo).
+**Reason:** Real thumbnail generation adds third-party dependencies and async complexity not warranted within the time constraint.
+
+### Separate endpoints per asset type
+**Decision:** `/assets/links`, `/assets/files`, `/assets/videos` rather than a single `/assets` endpoint.
+**Alternatives considered:** Single `/assets` endpoint with a `type` discriminator.
+**Reason:** Request shapes are fundamentally different — links and videos are JSON, files are multipart. A unified endpoint would require runtime type switching with no real benefit.
+
+### Nested asset routes
+**Decision:** Asset routes nested under projects: `POST /api/projects/:projectId/assets/links`.
+**Alternatives considered:** Flat routes `POST /api/assets` with `projectId` in the body.
+**Reason:** Ownership is clear in the URL. An asset always belongs to a project — the route reflects that relationship.
+
+### File asset update replaces the file on disk
+**Decision:** Updating a file asset deletes the old file and saves the new one before updating the DB record.
+**Tradeoff:** If the DB update fails after the new file is saved, the new file is orphaned on disk. A robust solution would use a transaction with compensating actions (save new file, attempt DB update, rollback by deleting new file on failure). Out of scope for this exercise.

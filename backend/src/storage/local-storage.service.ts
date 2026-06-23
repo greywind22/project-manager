@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { IStorageService, MulterFile } from './interface';
+import { IStorageService, MulterFile } from './storage.interface';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
