@@ -83,6 +83,10 @@ Deliberate technical choices made during development, with alternatives consider
 - Docker container per test run — gold standard for isolation but adds infrastructure complexity not warranted here.
 **Reason:** Clean isolation without compromising production code. `beforeEach` truncation (not `afterEach`) ensures a clean state even if a previous test fails.
 
+### Jest configuration for E2E tests
+**Decision:** E2E tests run with `maxWorkers: 1` (sequential execution) to avoid database contention between test suites.
+**Reason:** Two test suites running in parallel against the same test database can cause race conditions and flaky tests. Sequential execution guarantees isolation.
+
 ### PostgreSQL installed directly on Windows
 **Decision:** PostgreSQL installed locally rather than via Docker.
 **Alternatives considered:** Docker container for Postgres.
