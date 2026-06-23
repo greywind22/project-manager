@@ -8,6 +8,7 @@ build/
 # Environment files — never commit these
 .env
 .env.local
+.env.test
 
 # Uploads — local file storage, not committed
 backend/uploads/

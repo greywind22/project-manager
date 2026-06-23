@@ -59,3 +59,36 @@ Deliberate technical choices made during development, with alternatives consider
 ### File asset update replaces the file on disk
 **Decision:** Updating a file asset deletes the old file and saves the new one before updating the DB record.
 **Tradeoff:** If the DB update fails after the new file is saved, the new file is orphaned on disk. A robust solution would use a transaction with compensating actions (save new file, attempt DB update, rollback by deleting new file on failure). Out of scope for this exercise.
+
+## Testing
+
+### Unit tests on AssetsService
+**Decision:** Unit test the service layer for asset creation, platform detection, and thumbnail extraction.
+**Reason:** This is where the most logic lives — platform detection, thumbnail URL extraction, file replacement flow. Pure functions that are easy to test in isolation by mocking PrismaService and StorageService.
+
+### E2E tests for projects and assets endpoints
+**Decision:** E2E tests covering the core asset CRUD flow using NestJS testing utilities.
+**Tests included:**
+- `GET /api/projects/:id` — returns project with assets and custom fields
+- `POST /api/projects/:projectId/assets/links` — creates a link asset
+- `PATCH /api/projects/:projectId/assets/:assetId/links` — updates a link asset
+- `DELETE /api/projects/:projectId/assets/:assetId` — deletes an asset
+
+### What we skipped and why
+- **Controller tests** — controllers are thin wrappers with no logic. Testing them would just be testing that NestJS routing works, which is not our responsibility.
+- **ProjectsService unit tests** — straightforward Prisma calls with no business logic worth isolating.
+- **File upload E2E tests** — multipart form data adds significant complexity to the test setup. The file replacement logic is covered by AssetsService unit tests.
+- **Frontend tests** — out of scope given the time constraint. With more time: React Testing Library for hook and component tests.
+
+### Test database strategy
+**Decision:** Dedicated test database (`project_manager_test`) with migrations run before the suite and tables truncated in `beforeEach`.
+**Alternatives considered:**
+- Transaction rollback per test — Prisma's transaction client has a different API to the regular client, which would bleed into production code to accommodate tests. Ruled out.
+- Shared dev database — risk of test data polluting development data. Ruled out.
+- Docker container per test run — gold standard for isolation but adds infrastructure complexity not warranted here.
+**Reason:** Clean isolation without compromising production code. `beforeEach` truncation (not `afterEach`) ensures a clean state even if a previous test fails.
+
+### PostgreSQL installed directly on Windows
+**Decision:** PostgreSQL installed locally rather than via Docker.
+**Alternatives considered:** Docker container for Postgres.
+**Reason:** Simpler setup for a one-day exercise. Docker adds container management complexity that isn't warranted here. For a team environment, Docker Compose would be the right call — consistent Postgres version across all developer machines.
