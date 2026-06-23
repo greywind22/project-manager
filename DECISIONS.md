@@ -68,11 +68,6 @@ Deliberate technical choices made during development, with alternatives consider
 
 ### E2E tests for projects and assets endpoints
 **Decision:** E2E tests covering the core asset CRUD flow using NestJS testing utilities.
-**Tests included:**
-- `GET /api/projects/:id` — returns project with assets and custom fields
-- `POST /api/projects/:projectId/assets/links` — creates a link asset
-- `PATCH /api/projects/:projectId/assets/:assetId/links` — updates a link asset
-- `DELETE /api/projects/:projectId/assets/:assetId` — deletes an asset
 
 ### What we skipped and why
 - **Controller tests** — controllers are thin wrappers with no logic. Testing them would just be testing that NestJS routing works, which is not our responsibility.
