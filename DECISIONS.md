@@ -68,6 +68,11 @@ Deliberate technical choices made during development, with alternatives consider
 
 ### E2E tests for projects and assets endpoints
 **Decision:** E2E tests covering the core asset CRUD flow using NestJS testing utilities.
+**Tests included:**
+- `GET /api/projects/:id` — returns project with assets and custom fields
+- `POST /api/projects/:projectId/assets/links` — creates a link asset
+- `PATCH /api/projects/:projectId/assets/:assetId/links` — updates a link asset
+- `DELETE /api/projects/:projectId/assets/:assetId` — deletes an asset
 
 ### What we skipped and why
 - **Controller tests** — controllers are thin wrappers with no logic. Testing them would just be testing that NestJS routing works, which is not our responsibility.
@@ -83,10 +88,6 @@ Deliberate technical choices made during development, with alternatives consider
 - Docker container per test run — gold standard for isolation but adds infrastructure complexity not warranted here.
 **Reason:** Clean isolation without compromising production code. `beforeEach` truncation (not `afterEach`) ensures a clean state even if a previous test fails.
 
-### Jest configuration for E2E tests
-**Decision:** E2E tests run with `maxWorkers: 1` (sequential execution) to avoid database contention between test suites.
-**Reason:** Two test suites running in parallel against the same test database can cause race conditions and flaky tests. Sequential execution guarantees isolation.
-
 ### PostgreSQL installed directly on Windows
 **Decision:** PostgreSQL installed locally rather than via Docker.
 **Alternatives considered:** Docker container for Postgres.
@@ -95,10 +96,29 @@ Deliberate technical choices made during development, with alternatives consider
 ### Frontend types manually duplicated from Prisma schema
 **Decision:** Frontend types in `src/types/index.ts` are manually written to mirror the Prisma schema.
 **Alternatives considered:**
-- `@nestjs/swagger` + `orval` — generate OpenAPI spec from NestJS controllers, then generate typed frontend API client and types from the spec automatically
-- `tsoa` — alternative to @nestjs/swagger that generates both the spec and backend route handlers from decorators
+- `@nestjs/swagger` + `openapi-typescript` — generate types from an OpenAPI spec automatically
+- `tsoa` — decorators on controllers generate both Swagger docs and TypeScript types
 - Shared `packages/types/` in the monorepo — both backend and frontend import from the same source of truth
+**Reason:** Out of scope for a one-day exercise. The manual types are fragile — if the schema changes, the frontend types must be updated manually. With more time, `@nestjs/swagger` + `openapi-typescript` would be the right call.
 
-### Project fetch and mutations colocated in useProject.ts
-**Decision:** `useProjectMutations` lives in `useProject.ts` rather than a separate file.
-**Reason:** Both are used together on the project detail page. Keeping them in one file reduces unnecessary file jumping.
+## Frontend Testing
+
+### Vitest over Jest
+**Decision:** Vitest for frontend tests instead of Jest.
+**Reason:** Vitest is the natural choice for Vite projects — it uses the same config, supports the same globals API as Jest, and has better ESM support. No separate babel config needed.
+
+### Hook tests only — no rendering tests
+**Decision:** Tests cover custom hooks (`useProjects`, `useProject`, `useProjectMutations`, `useAssets`) only. No component rendering tests.
+**Reason:** The brief says tests should "earn their keep." The hooks contain all the data fetching and mutation logic — that's where bugs live. Component rendering tests would mostly test that React renders JSX correctly, which is not our responsibility to test.
+**What we'd add with more time:**
+- `AssetsGrid` — test that photos open lightbox, documents open new tab
+- `ProjectsListPage` — test that create project flow renders and calls the right hook
+- `ProjectDetailPage` — test that asset sections render and modals open correctly
+
+### waitFor over act
+**Decision:** RTL's `waitFor` instead of React's `act` for async assertions.
+**Reason:** `waitFor` is more declarative — it retries the assertion until it passes rather than requiring manual flushing of React's update queue. More resilient to timing issues and closer to RTL's testing philosophy of asserting outcomes rather than implementation details.
+
+### Mocked<T> for typed mocks
+**Decision:** Vitest's `Mocked<T>` utility type for casting mocked modules.
+**Reason:** Avoids unsafe `as unknown as` double casting. `Mocked<T>` replaces all methods with mock function types so TypeScript understands the mock API correctly.
