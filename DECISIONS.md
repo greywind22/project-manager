@@ -91,3 +91,10 @@ Deliberate technical choices made during development, with alternatives consider
 **Decision:** PostgreSQL installed locally rather than via Docker.
 **Alternatives considered:** Docker container for Postgres.
 **Reason:** Simpler setup for a one-day exercise. Docker adds container management complexity that isn't warranted here. For a team environment, Docker Compose would be the right call — consistent Postgres version across all developer machines.
+
+### Frontend types manually duplicated from Prisma schema
+**Decision:** Frontend types in `src/types/index.ts` are manually written to mirror the Prisma schema.
+**Alternatives considered:**
+- `@nestjs/swagger` + `orval` — generate OpenAPI spec from NestJS controllers, then generate typed frontend API client and types from the spec automatically
+- `tsoa` — alternative to @nestjs/swagger that generates both the spec and backend route handlers from decorators
+- Shared `packages/types/` in the monorepo — both backend and frontend import from the same source of truth
