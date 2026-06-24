@@ -26,7 +26,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
   // 204 No Content has no body
   if (res.status === 204) return undefined as T;
-  return res.json();
+  // Handle 200 responses with empty body (e.g. DELETE)
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text);
 }
 
 // ---------------------------------------------------------------------------

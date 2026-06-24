@@ -66,7 +66,7 @@ npm run db:migrate:test
 ### 4. Seed sample data
 
 ```bash
-npm run db:seed
+npm run seed
 ```
 
 ### 5. Start the backend
@@ -78,3 +78,22 @@ npm run start:dev
 Backend runs at `http://localhost:3000/api`
 
 ---
+
+## Frontend setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs at `http://localhost:5173`
+
+---
+
+## Running tests
+
+```bash
+cd backend
+npm test
+```

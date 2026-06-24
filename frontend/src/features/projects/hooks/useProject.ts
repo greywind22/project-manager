@@ -11,10 +11,10 @@ export function useProject(id: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // fetchProject is wrapped in useCallback so its reference stays stable.
+  // refetch is wrapped in useCallback so its reference stays stable.
   // This means we can safely pass it as a dependency to useEffect without
   // causing infinite re-renders.
-  const fetchProject = useCallback(() => {
+  const refetch = useCallback(() => {
     setLoading(true);
     setError(null);
 
@@ -31,12 +31,11 @@ export function useProject(id: string) {
   }, [id]); // Re-create if id changes
 
   useEffect(() => {
-    fetchProject();
-  }, [fetchProject]);
+    refetch();
+  }, [refetch]);
 
-  // refetch is the same as fetchProject — exposed with a clearer name
-  // for callers that want to trigger a re-fetch after a mutation.
-  return { project, loading, error, refetch: fetchProject };
+  // refetch is for callers that want to trigger a re-fetch after a mutation.
+  return { project, loading, error, refetch };
 }
 
 interface UseProjectMutationsOptions {
@@ -47,8 +46,8 @@ interface UseProjectMutationsOptions {
 export function useProjectMutations({ onSuccess }: UseProjectMutationsOptions) {
   const [loading, setLoading] = useState(false);
 
-  // Generic mutation wrapper — handles loading state and calls onSuccess
-  async function mutate<T>(fn: () => Promise<T>): Promise<string | null> {
+  // Generic wrapper — handles loading state and calls onSuccess
+  async function run<T>(fn: () => Promise<T>): Promise<string | null> {
     setLoading(true);
     try {
       await fn();
@@ -65,12 +64,12 @@ export function useProjectMutations({ onSuccess }: UseProjectMutationsOptions) {
     loading,
 
     createProject: (data: CreateProjectRequest) =>
-      mutate(() => projectsApi.create(data)),
+      run(() => projectsApi.create(data)),
 
     updateProject: (id: string, data: UpdateProjectRequest) =>
-      mutate(() => projectsApi.update(id, data)),
+      run(() => projectsApi.update(id, data)),
 
     removeProject: (id: string) =>
-      mutate(() => projectsApi.remove(id)),
+      run(() => projectsApi.remove(id)),
   };
 }

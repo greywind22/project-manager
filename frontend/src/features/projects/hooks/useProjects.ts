@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { ProjectSummary } from '../../../types/index';
 import { projectsApi } from '../../../types/api';
 
@@ -10,35 +10,25 @@ export function useProjects() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Track if the component is still mounted.
-    // If it unmounts before the fetch completes, we don't update state
-    // to avoid the "can't perform state update on unmounted component" warning.
-    let cancelled = false;
-
+  const refetch = useCallback(() => {
     setLoading(true);
     setError(null);
 
     projectsApi
       .list()
       .then((data) => {
-        if (!cancelled) {
-          setProjects(data);
-          setLoading(false);
-        }
+        setProjects(data);
+        setLoading(false);
       })
       .catch((err: Error) => {
-        if (!cancelled) {
-          setError(err.message);
-          setLoading(false);
-        }
+        setError(err.message);
+        setLoading(false);
       });
+  }, []);
 
-    // Cleanup function — runs when the component unmounts
-    return () => {
-      cancelled = true;
-    };
-  }, []); // Empty array means this runs once on mount
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
-  return { projects, loading, error };
+  return { projects, loading, error, refetch };
 }

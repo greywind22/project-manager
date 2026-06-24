@@ -1,7 +1,7 @@
 import { PrismaClient, AssetType, CustomFieldType } from '@prisma/client';
 
 // This seed file populates the DB with sample data for development.
-// Run with: npm run db:seed
+// Run with: npm run seed
 // SHORTCUT: Custom fields are seeded rather than user-created via UI.
 
 const prisma = new PrismaClient();
