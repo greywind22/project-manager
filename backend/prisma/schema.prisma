@@ -1,0 +1,152 @@
+// Prisma schema file
+// This is the single source of truth for the database structure.
+// Running `prisma migrate dev` reads this file and generates SQL migrations.
+// Running `prisma generate` produces the TypeScript client used in our code.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Reads the DATABASE_URL from the .env file at the project root
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Project
+// The core entity. Everything else hangs off this.
+// ---------------------------------------------------------------------------
+model Project {
+  id           String   @id @default(uuid())
+  title        String
+  status       String   // e.g. "In Progress", "Complete". Could be an enum later.
+  bookedDate   DateTime?
+  // bookingId and customerRef are opaque reference strings from an external system.
+  // Optional because not all projects may have them.
+  // ASSUMPTION: these are not FKs to internal tables — we have no Booking or Customer
+  // entities in scope. With more time we'd clarify whether these reference internal entities
+  bookingId    String?
+  customerRef  String?
+  address      String?
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  assets       Asset[]
+  customFields CustomField[]
+}
+
+// ---------------------------------------------------------------------------
+// Asset (base table)
+// Holds fields shared across ALL asset types.
+// Type-specific fields live in the per-type tables below (one-to-one).
+//
+// WHY THIS PATTERN (polymorphic via base + sub-tables):
+// SQL doesn't support polymorphism natively. The alternatives are:
+//   1. One table, nullable columns per type — simple but leaks type concerns
+//   2. Separate tables per type — no shared behaviour without unions
+//   3. Base table + per-type tables (this approach) — shared behaviour on
+//      Asset, type-specific constraints in sub-tables. Tradeoff: every read
+//      is a join, and Prisma returns null sub-tables for non-matching types.
+// ---------------------------------------------------------------------------
+model Asset {
+  id           String    @id @default(uuid())
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type         AssetType
+  name         String
+  // thumbnailUrl is nullable. For files we generate/store it on upload.
+  // For links it's a placeholder. For videos it's the YouTube/Vimeo thumbnail.
+  thumbnailUrl String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // One-to-one relations to type-specific tables.
+  // Only one will be populated per row — the others will be null.
+  assetLink    AssetLink?
+  assetFile    AssetFile?
+  assetVideo   AssetVideo?
+}
+
+enum AssetType {
+  LINK
+  DOCUMENT
+  PHOTO
+  VIDEO
+}
+
+// ---------------------------------------------------------------------------
+// AssetLink
+// Stores URL-based assets (external links).
+// ---------------------------------------------------------------------------
+model AssetLink {
+  id      String @id @default(uuid())
+  assetId String @unique  // @unique enforces the one-to-one with Asset
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  url     String
+  label   String? // Optional human-readable label for the link
+}
+
+// ---------------------------------------------------------------------------
+// AssetFile
+// Covers both DOCUMENT and PHOTO types — they share the same storage shape.
+// The AssetType enum on the base Asset table distinguishes them for display.
+//
+// SHORTCUT: filePath stores a local disk path. The storage layer is behind
+// a StorageService interface so swapping to S3 later only touches that service.
+// ---------------------------------------------------------------------------
+model AssetFile {
+  id        String  @id @default(uuid())
+  assetId   String  @unique
+  asset     Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  filePath  String  // Local path, e.g. /uploads/abc123.pdf
+  mimeType  String  // e.g. application/pdf, image/png
+  sizeBytes Int?
+}
+
+// ---------------------------------------------------------------------------
+// AssetVideo
+// ASSUMPTION: Videos are external URLs only (YouTube/Vimeo).
+// Raw video upload is out of scope for this exercise.
+// ---------------------------------------------------------------------------
+model AssetVideo {
+  id          String        @id @default(uuid())
+  assetId     String        @unique
+  asset       Asset         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  externalUrl String
+  platform    VideoPlatform @default(YOUTUBE)
+}
+
+enum VideoPlatform {
+  YOUTUBE
+  VIMEO
+  OTHER
+}
+
+// ---------------------------------------------------------------------------
+// CustomField
+// Key/value pairs attached to a project.
+// ASSUMPTION: Values are stored as JSONB so the DB preserves the native type
+// (boolean stays boolean, number stays number, etc.)
+// valueType tells the frontend how to render/validate the field.
+// SHORTCUT: Fields are seeded, not user-created via the UI.
+// ---------------------------------------------------------------------------
+model CustomField {
+  id        String          @id @default(uuid())
+  projectId String
+  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key       String
+  value     Json            // JSONB in Postgres — preserves native types
+  valueType CustomFieldType
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  DATE
+}
