@@ -1,5 +1,7 @@
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import type { Asset } from '../../../types';
+import { useState } from 'react';
+import { LightboxModal } from '../../../shared/components/LightboxModal';
 
 // ---------------------------------------------------------------------------
 // AssetSection
@@ -110,33 +112,59 @@ interface AssetsGridProps {
 }
 
 export function AssetsGrid({ assets, onEdit, onDelete }: AssetsGridProps) {
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+
+  function handleClick(asset: Asset) {
+    if (asset.type === 'PHOTO' && asset.thumbnailUrl) {
+      // Photos open in lightbox
+      setLightbox({ src: asset.thumbnailUrl, alt: asset.name });
+    } else if (asset.type === 'DOCUMENT' && asset.assetFile) {
+      // Documents open in new tab
+      // SHORTCUT: Lightbox not supported for documents — would require
+      // an iframe for PDFs and varies by file type. Opening in new tab instead.
+      window.open(`/uploads/${asset.assetFile.filePath}`, '_blank');
+    }
+  }
+
   return (
-    <div className="flex flex-wrap gap-3">
-      {assets.map((asset) => (
-        <div key={asset.id} className="relative group">
-          <div className="w-24 h-24 bg-gray-100 rounded overflow-hidden">
-            {asset.thumbnailUrl ? (
-              <img
-                src={asset.thumbnailUrl}
-                alt={asset.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-1 text-center">
-                {asset.name}
-              </div>
-            )}
+    <>
+      <div className="flex flex-wrap gap-3">
+        {assets.map((asset) => (
+          <div key={asset.id} className="relative group">
+            <div
+              className="w-24 h-24 bg-gray-100 rounded overflow-hidden cursor-pointer"
+              onClick={() => handleClick(asset)}
+              title={asset.name}
+            >
+              {asset.thumbnailUrl ? (
+                <img
+                  src={asset.thumbnailUrl}
+                  alt={asset.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-1 text-center">
+                  {asset.name}
+                </div>
+              )}
+            </div>
+            <div className="absolute top-0 right-0 hidden group-hover:flex bg-white rounded-bl shadow-sm">
+              <AssetActions onEdit={() => onEdit(asset)} onDelete={() => onDelete(asset)} />
+            </div>
           </div>
-          {/* Action buttons appear on hover */}
-          <div className="absolute top-0 right-0 hidden group-hover:flex bg-white rounded-bl shadow-sm">
-            <AssetActions onEdit={() => onEdit(asset)} onDelete={() => onDelete(asset)} />
-          </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {lightbox && (
+        <LightboxModal
+          src={lightbox.src}
+          alt={lightbox.alt}
+          onClose={() => setLightbox(null)}
+        />
+      )}
+    </>
   );
 }
-
 // ---------------------------------------------------------------------------
 // VideosList
 // Renders video assets. YouTube videos show a thumbnail.
@@ -152,7 +180,7 @@ export function VideosList({ assets, onEdit, onDelete }: VideosListProps) {
   return (
     <div className="space-y-3">
       {assets.map((asset) => (
-        <div key={asset.id} className="relative group">
+        <div key={asset.id} className="relative group" title={asset.name}>
           <div className="w-full max-w-sm aspect-video bg-gray-200 rounded overflow-hidden">
             {asset.thumbnailUrl ? (
               <a

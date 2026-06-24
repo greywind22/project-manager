@@ -110,7 +110,7 @@ export interface CreateLinkAssetRequest {
 export interface UpdateLinkAssetRequest {
   name?: string;
   url?: string;
-  label?: string;
+  label?: string | null;
 }
 
 export interface CreateFileAssetRequest {

@@ -88,7 +88,7 @@ export function EditLinkModal({ asset, loading, onSave, onClose }: EditLinkModal
         </Field>
         <ModalActions
           onClose={onClose}
-          onSave={() => onSave({ url, label: label || undefined })}
+          onSave={() => onSave({ url, label: label || null })}
           disabled={!url}
           loading={loading}
         />

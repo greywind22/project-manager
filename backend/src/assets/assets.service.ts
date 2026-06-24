@@ -55,7 +55,7 @@ export class AssetsService {
   async updateLink(
     projectId: string,
     assetId: string,
-    data: { name?: string; url?: string; label?: string },
+    data: { name?: string; url?: string; label?: string | null },
   ) {
     await this.assertAssetExists(projectId, assetId);
     return this.prisma.asset.update({
@@ -65,7 +65,7 @@ export class AssetsService {
         assetLink: {
           update: {
             ...(data.url && { url: data.url }),
-            ...(data.label && { label: data.label }),
+             label: data.label ?? null,
           },
         },
       },
