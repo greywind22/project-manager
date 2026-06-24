@@ -98,3 +98,7 @@ Deliberate technical choices made during development, with alternatives consider
 - `@nestjs/swagger` + `orval` — generate OpenAPI spec from NestJS controllers, then generate typed frontend API client and types from the spec automatically
 - `tsoa` — alternative to @nestjs/swagger that generates both the spec and backend route handlers from decorators
 - Shared `packages/types/` in the monorepo — both backend and frontend import from the same source of truth
+
+### Project fetch and mutations colocated in useProject.ts
+**Decision:** `useProjectMutations` lives in `useProject.ts` rather than a separate file.
+**Reason:** Both are used together on the project detail page. Keeping them in one file reduces unnecessary file jumping.
